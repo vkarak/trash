@@ -1,0 +1,11 @@
+TODOS
+-----
+
+1. Add an option not to follow symbolic links.
+2. Add an option to shred the contents of trash.
+3. GNOME support.
+4. Add deletion date to the output list of `trash -l'.
+5. Do not require trash directories to be present. Prompt the user for
+   creation, if they do not exist.
+6. [DONE] Print GPL information with the `--version' option.
+7. Enhance `--help' output.
