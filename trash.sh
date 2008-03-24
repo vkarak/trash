@@ -17,6 +17,15 @@
 # Major Revisions
 # ---------------
 #
+# 24/03/2008: (V. K. Karakasis) (trash-1.2.7)
+#	- A new `-f' option was added.
+#	- The help output was enhanced a bit.
+# 25/12/2007: (V. K. Karakasis) (trash-1.2.6)
+# 	- `trash' now creates the Trash directory structure, if it does not exist.
+# 	
+# 10/09/2007: (V. K. Karakasis) (trash-1.2.5)
+# 	- Problem with wildcards in with `-r' option fixed.
+#
 # 25/12/2006: (V. K. Karakasis)	(trash-1.2.4)
 # 	- A problem at constructing the absolute file paths in `.trashinfo' info
 # 	  files (see Bug #001 and Bug #003) is fixed.
@@ -44,21 +53,22 @@
 #     trash.
 #   - Slight modifications to `-r' option processing were made, too.
 #
-# 20/08/2006: Revision 1.1 (V. K. Karakasis)  (trash-1.1.1)
+# 20/08/2006: (V. K. Karakasis)  (trash-1.1.1)
 #   - First working version
 # 
 
 E_PARAM=64
 E_EXIST=65
 E_ARG=66
+E_IO=67
 
 PNAME="trash"
 PNAME_SC="Trash"
 AUTHOR="V. K. Karakasis"
-VERSION="1.2.4"
+VERSION="1.2.6"
 
-short_opt="d:ehlr:uv"
-long_opt="delete:,empty,help,list,restore:,usage,version"
+short_opt="d:efhlr:uv"
+long_opt="delete:,empty,force,help,list,restore:,usage,version"
 exit_status=0
 
 infosuffix="trashinfo"
@@ -73,18 +83,15 @@ function print_help()
 {
 	echo -e "Usage: $PNAME [OPTION]... FILE..."
 	echo -e "Move FILE(s) to trash."
-	echo -e "-d [delete-list], --delete=delete-list  permanently remove files"
-	echo -e "                                        from trash."
-	echo -e "-e, --empty                             empty the trash."
-	echo -e "-h, --help                              display this help"\
-		"message."
-	echo -e "-l, --list                              display a listing of" \
-		"the contents of"
-	echo -e "                                        the trash."
-	echo -e "-r [restore-list], --restore=restore-list restore files"\
+	echo -e "-d [delete-list], --delete=[delete-list]  permanently remove files from trash."
+	echo -e "-e, --empty     empty the trash."
+	echo -e "-f, --force     do not prompt for confirmaton on delete or empty."
+	echo -e "-h, --help      display this help message."
+	echo -e "-l, --list      display a listing of the contents of the trash."
+	echo -e "-r [restore-list], --restore=[restore-list] restore files"\
 		"from trash."
-	echo -e "-u, --usage                             display trash usage."
-	echo -e "-v, --version                           print version number."
+	echo -e "-u, --usage     display trash usage."
+	echo -e "-v, --version   print version number."
 }
 
 
@@ -203,9 +210,15 @@ function remove_file()
 	# convert the comma separated list to an argument list
 	arglist=${1//","/" "}
 
-	echo -n \
-		"Do you really want to permanently delete the selected files? (y/n) "
-	read ans
+	if ((fflag == 0)); then
+		
+		echo -n "Do you really want to permanently delete" \
+			"the selected files? (y/n) "
+		read ans
+	else
+		# force delete; do not prompt for confirmation
+		ans="y"
+	fi
 	case $ans in
 		"y" | "Y")
 			for arg in $arglist; do
@@ -231,8 +244,14 @@ function list_trash()
 # prompted for validation.
 function empty_trash()
 {
-	echo -n "Do you really want to empty the trash? (y/n) "
-	read ans
+	if ((fflag == 0)); then
+		echo -n "Do you really want to empty the trash? (y/n) "
+		read ans
+	else
+		# force delete; do not prompt for confirmation
+		ans="y"
+	fi
+
 	case $ans in
 		"y" | "Y")
 			/bin/rm -rf $TRASH_FILES/*
@@ -243,7 +262,7 @@ function empty_trash()
 			return ;;
 		"n" | "N")
 			return ;;
-		*) echo "Operation aborted: Unrecognized option" ;;
+		*) echo "operation aborted: Unrecognized option" ;;
 	esac
 }
 
@@ -255,6 +274,37 @@ function trash_usage()
 	echo "Metadata: " `/usr/bin/du -sh $TRASH_INFO | awk '{ print $1 }'`
 	echo "Total   : " `/usr/bin/du -sh $TRASH | awk '{ print $1 }'`
 }
+
+
+# Main script
+
+# Check if $TRASH directory exists
+if [ ! -e $TRASH ] || [ ! -e $TRASH_FILES ] || [ ! -e $TRASH_INFO ]; then
+	echo -e "$PNAME: trash directory structure does not exist"
+	echo -en "Would you like to create it? (y/n) "
+	read ans
+	case $ans in
+		"y" | "Y")
+			! /bin/mkdir -p $TRASH_FILES && \
+				echo -e "$PNAME: failed to create the directory structure" \
+				&& exit $E_IO
+			! /bin/mkdir -p $TRASH_INFO && \
+				echo -e "$PNAME: failed to create the directory structure" \
+				&& exit $E_IO ;;
+		"n" | "N")
+			echo -e "$PNAME: operation aborted"
+			exit 0 ;;
+		*)
+			echo -e "$PNAME: operation aborted: unrecognized option"
+			exit $E_ARG
+	esac
+fi
+
+if [ ! -d $TRASH ]; then
+	echo -e "$PNAME: \`$TRASH' not a directory"
+	exit $E_ARG
+fi
+
 
 if [ $# -eq 0 ]; then
 	echo "$PNAME: too few arguments"
@@ -273,6 +323,7 @@ fi
 
 rflag=0;
 dflag=0;
+fflag=0;
 for arg in $getopt_args ; do
 
 	case $arg in
@@ -280,6 +331,7 @@ for arg in $getopt_args ; do
 		"-e" | "--empty")
 			empty_trash
 			exit 0 ;;
+		"-f" | "--force") fflag=1 ;;
 		"-h" | "--help")
 			print_help
 			exit 0 ;;

@@ -253,7 +253,7 @@ Description:	`trash' always follows symbolic links, thus failing on those
 
 
 Bug #009
---------
+-------------------------------------------------------------------------------
 Reported:		1
 Significance:	MEDIUM
 Status:			NEW
@@ -262,3 +262,50 @@ Description:	When trying to restore a directory over an existing non-empty
 				overwrite a non empty directory.
 ==============================================================================
 ==============================================================================
+
+
+
+
+Bug #010
+-------------------------------------------------------------------------------
+Reported:		1
+Significance:	MEDIUM
+Status:			NEW
+Description:	If a file has not write permissions, trash will succeed in
+				moving the directory to trash, but when trying to purge it
+				from trash, it will fail. Howoever, the corresponding info
+				file will be removed, so the actual file will be stale. There
+				is no means then to remove this file through the `trash'
+				utility, except by explicitly changing its permissions and
+				finally removing it.
+Workaround:		(a) Change permissions and then move the file to trash.
+				(b) After moving the file to trash, explicitly set its
+					permissions inside the trash directory and then remove
+					from trash using the utility.
+-------------------------------------------------------------------------------
+Reports:
+
+
+Report #1
+---------
+bkk@dhcp-216 bkk > trash -e
+Do you really want to empty the trash? (y/n) y
+
+.
+.
+.
+
+/bin/rm: cannot remove `/home/bkk//.local/share/Trash/files/diploma/load_data/load_diagram_small.OPJ': Permission denied
+/bin/rm: cannot remove `/home/bkk//.local/share/Trash/files/diploma/load_data/Διάγραμμα φορτίου (ταινιόδρομος).OPJ': Permission denied
+/bin/rm: cannot remove `/home/bkk//.local/share/Trash/files/diploma/load_data/load_extended.txt': Permission denied
+/bin/rm: cannot remove `/home/bkk//.local/share/Trash/files/diploma/load_data/load_fan.txt': Permission denied
+/bin/rm: cannot remove `/home/bkk//.local/share/Trash/files/diploma/load_data/load_extended.xls': Permission denied
+/bin/rm: cannot remove `/home/bkk//.local/share/Trash/files/diploma/load_data/load_diagram_extended.OPJ': Permission denied
+bkk@dhcp-216 bkk > trash -l
+total 8.0K
+drwx--x--x 7 bkk users 4.0K 2007-10-15 14:17 diploma
+bkk@dhcp-216 bkk > trash -r diploma
+grep: /home/bkk//.local/share/Trash/info/diploma.trashinfo: No such file or directory
+mv: missing destination file operand after `/home/bkk//.local/share/Trash/files/diploma'
+Try `mv --help' for more information.
+bkk@dhcp-216 bkk >
