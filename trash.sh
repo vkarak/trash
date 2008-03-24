@@ -65,7 +65,7 @@ E_IO=67
 PNAME="trash"
 PNAME_SC="Trash"
 AUTHOR="V. K. Karakasis"
-VERSION="1.2.6"
+VERSION="1.2.7"
 
 short_opt="d:efhlr:uv"
 long_opt="delete:,empty,force,help,list,restore:,usage,version"
